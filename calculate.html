@@ -146,7 +146,11 @@
 <body>
   <div class="container">
     <h2>Live Profit/Target Calculator</h2>
-
+    
+    <div style="text-align:center; margin-bottom: 20px; font-size: 14px;">
+      <strong>Live BTC Price:</strong> $<span id="btcPrice">Loading...</span>
+    </div>
+    
     <label>Position</label>
     <div class="toggle-group" id="position-toggle">
       <button type="button" class="toggle active" data-value="long">Long</button>
@@ -182,9 +186,6 @@
       <p><strong>Risk (% of margin):</strong> <span id="risk"></span>%</p>
       <p><strong>Liquidation Price:</strong> $<span id="liqPrice"></span></p>
       <p id="warning" class="danger"></p>
-    </div>
-    <div style="text-align:center; margin-bottom: 20px; font-size: 14px;">
-      <strong>Live BTC Price:</strong> $<span id="btcPrice">Loading...</span>
     </div>
   </div>
 
