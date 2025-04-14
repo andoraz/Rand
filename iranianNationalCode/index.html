@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>تولیدکننده کد ملی ایران</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="container">
+    <div class="form-group">
+      <select id="province" onchange="populateCities()">
+        <option value="">استان رو انتخاب کن</option>
+      </select>
+      <select id="city">
+        <option value="">اول استان رو انتخاب کن</option>
+      </select>
+      <input type="number" id="birthYear" min="1300" max="1405" value="1380">
+      <div class="buttons">
+        <button onclick="generateNationalCode()">بساز</button>
+        <button onclick="generateRandomNationalCode()">یه کد تصادفی بده</button>
+      </div>
+    </div>
+    <div id="output" class="result"></div>
+    <div id="toast" class="toast"></div>
+  </div>
+
+  <script src="scripts.js"></script>
+</body>
+</html>
