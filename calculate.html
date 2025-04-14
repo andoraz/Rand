@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Profit Calculator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background-color: #1a1a2e;
+      color: #ffffff;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 40px 20px;
+    }
+
+    .container {
+      background: #2e2e48;
+      padding: 30px;
+      border-radius: 16px;
+      max-width: 480px;
+      width: 100%;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      transition: 0.3s ease;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 25px;
+      font-size: 24px;
+    }
+
+    label {
+      margin-top: 16px;
+      font-size: 14px;
+      display: block;
+      font-weight: 500;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: none;
+      margin-top: 6px;
+      font-size: 15px;
+      background: #3a3a5a;
+      color: #fff;
+      transition: 0.2s ease;
+    }
+
+    input:disabled {
+      background: #2d2d3e;
+      opacity: 0.5;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px #7b61ff;
+    }
+
+    .toggle-group {
+      display: flex;
+      margin-top: 6px;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .toggle {
+      flex: 1;
+      padding: 12px;
+      background-color: #3a3a5a;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .toggle.active {
+      background-color: #7b61ff;
+    }
+
+    .results {
+      margin-top: 30px;
+      background: #3d3d5c;
+      padding: 20px;
+      border-radius: 12px;
+      font-size: 15px;
+      line-height: 1.6;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .results.show {
+      opacity: 1;
+    }
+
+    .results p {
+      margin: 6px 0;
+    }
+
+    .danger {
+      color: #ff7070;
+      font-weight: bold;
+    }
+
+    .button {
+      margin-top: 24px;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      background-color: #7b61ff;
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    button:hover {
+      background-color: #9a80ff;
+    }
+
+    .switch-group {
+      display: flex;
+      gap: 10px;
+    }
+
+    .switch-option {
+      flex: 1;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Live Profit/Target Calculator</h2>
+
+    <label>Position</label>
+    <div class="toggle-group" id="position-toggle">
+      <button type="button" class="toggle active" data-value="long">Long</button>
+      <button type="button" class="toggle" data-value="short">Short</button>
+    </div>
+
+    <label>Leverage: <span id="levVal">10x</span></label>
+    <input type="range" id="leverage" min="1" max="100" value="10" />
+
+    <label>Margin ($)</label>
+    <input type="number" id="margin" placeholder="e.g. 100" min="0.01" step="0.01" />
+
+    <label>Entry Price ($)</label>
+    <input type="number" id="entry" placeholder="e.g. 25000" min="0.01" step="0.01" />
+
+    <label>Desired Target or Profit</label>
+    <div class="switch-group">
+      <div class="switch-option">
+        <input type="number" id="target" placeholder="Target Price ($)" step="0.01" />
+      </div>
+      <div class="switch-option">
+        <input type="number" id="profit" placeholder="Desired Profit ($)" step="0.01" />
+      </div>
+    </div>
+
+    <div class="button">
+      <button onclick="resetFields()">Reset</button>
+    </div>
+
+    <div class="results" id="results">
+      <p><strong>Target Price:</strong> $<span id="outTarget"></span></p>
+      <p><strong>Profit:</strong> $<span id="outProfit"></span></p>
+      <p><strong>Risk (% of margin):</strong> <span id="risk"></span>%</p>
+      <p><strong>Liquidation Price:</strong> $<span id="liqPrice"></span></p>
+      <p id="warning" class="danger"></p>
+    </div>
+    <div style="text-align:center; margin-bottom: 20px; font-size: 14px;">
+      <strong>Live BTC Price:</strong> $<span id="btcPrice">Loading...</span>
+    </div>
+  </div>
+
+  <script>
+    const inputs = document.querySelectorAll('input, select');
+    const targetField = document.getElementById('target');
+    const profitField = document.getElementById('profit');
+    const resultBox = document.getElementById('results');
+    const warning = document.getElementById('warning');
+    const leverageSlider = document.getElementById('leverage');
+    const levValDisplay = document.getElementById('levVal');
+    let position = 'long';
+
+    document.querySelectorAll('#position-toggle .toggle').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#position-toggle .toggle').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        position = btn.dataset.value;
+        handleInputs();
+      });
+    });
+
+    leverageSlider.addEventListener('input', () => {
+      levValDisplay.innerText = leverageSlider.value + 'x';
+      handleInputs();
+    });
+
+    inputs.forEach((input, index) => {
+      input.addEventListener('input', handleInputs);
+      input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && inputs[index + 1]) inputs[index + 1].focus();
+      });
+    });
+
+    targetField.addEventListener('input', () => {
+      profitField.disabled = targetField.value !== "";
+    });
+
+    profitField.addEventListener('input', () => {
+      targetField.disabled = profitField.value !== "";
+    });
+
+    function resetFields() {
+      inputs.forEach(input => {
+        if (input.tagName === "INPUT") {
+          input.value = "";
+          input.disabled = false;
+        }
+      });
+      resultBox.classList.remove('show');
+    }
+
+    function handleInputs() {
+      const lev = parseFloat(leverageSlider.value);
+      const mar = parseFloat(document.getElementById('margin').value);
+      const ent = parseFloat(document.getElementById('entry').value);
+      const tgt = parseFloat(targetField.value);
+      const prf = parseFloat(profitField.value);
+
+      if (!lev || !mar || !ent || (isNaN(tgt) && isNaN(prf))) {
+        resultBox.classList.remove('show');
+        return;
+      }
+
+      const size = mar * lev;
+      let targetPrice = tgt;
+      let profit = prf;
+
+      if (!isNaN(targetPrice)) {
+        profit = position === 'long'
+          ? ((targetPrice - ent) / ent) * size
+          : ((ent - targetPrice) / ent) * size;
+      } else if (!isNaN(profit)) {
+        targetPrice = position === 'long'
+          ? ent + (profit * ent / size)
+          : ent - (profit * ent / size);
+      } else {
+        resultBox.classList.remove('show');
+        return;
+      }
+
+      const riskPercent = (profit / mar) * 100;
+      const liqPrice = position === 'long'
+        ? ent - (ent / lev)
+        : ent + (ent / lev);
+
+      document.getElementById('outTarget').innerText = targetPrice.toFixed(2);
+      document.getElementById('outProfit').innerText = profit.toFixed(2);
+      document.getElementById('risk').innerText = riskPercent.toFixed(2);
+      document.getElementById('liqPrice').innerText = liqPrice.toFixed(2);
+
+      const liqWarning = Math.abs(targetPrice - liqPrice) / ent;
+      warning.innerText = liqWarning < 0.1 ? '⚠️ Warning: Target close to liquidation!' : '';
+
+      resultBox.classList.add('show');
+    }
+      async function fetchBTCPrice() {
+    try {
+      const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');
+      const data = await response.json();
+      document.getElementById('btcPrice').innerText = parseFloat(data.bitcoin.usd).toLocaleString();
+    } catch (error) {
+      document.getElementById('btcPrice').innerText = 'Error';
+    }
+  }
+
+  fetchBTCPrice();
+  setInterval(fetchBTCPrice, 30000); // update every 30 seconds
+  </script>
+</body>
+</html>
