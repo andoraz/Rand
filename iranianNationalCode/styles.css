@@ -1,0 +1,121 @@
+/* styles.css */
+@import url('https://cdn.fontcdn.ir/Font/Persian/Vazir/Vazir.css');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Vazir', sans-serif;
+}
+
+body {
+  background: #1a1a1a; /* رنگ پس‌زمینه دارک */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  direction: rtl;
+  color: #e0e0e0; /* رنگ متن پیش‌فرض روشن */
+}
+
+.container {
+  width: 100%;
+  max-width: 28rem; /* 450px = 28rem */
+  padding: 1.25rem; /* 20px = 1.25rem */
+}
+
+h2 {
+  text-align: center;
+  color: #ffffff; /* رنگ سفید برای تیتر */
+  margin-bottom: 1.25rem;
+  font-size: 1.5rem; /* 24px = 1.5rem */
+}
+
+.form-group {
+  background: #2c2c2c; /* رنگ دارک برای فرم */
+  padding: 1.25rem;
+  border-radius: 0.75rem; /* 12px = 0.75rem */
+  box-shadow: 0 0.125rem 0.625rem rgba(0, 0, 0, 0.2); /* سایه دارک */
+}
+
+select, input[type="number"] {
+  width: 100%;
+  padding: 0.75rem; /* 12px = 0.75rem */
+  margin: 0.625rem 0; /* 10px = 0.625rem */
+  border: 1px solid #444;
+  border-radius: 0.5rem; /* 8px = 0.5rem */
+  font-size: 0.875rem; /* 14px = 0.875rem */
+  color: #e0e0e0;
+  background: #333; /* پس‌زمینه دارک برای ورودی‌ها */
+}
+
+select:focus, input[type="number"]:focus {
+  border-color: #3498db;
+  outline: none;
+}
+
+.buttons {
+  display: flex;
+  gap: 0.625rem; /* 10px = 0.625rem */
+  margin-top: 0.9375rem; /* 15px = 0.9375rem */
+}
+
+button {
+  flex: 1;
+  padding: 0.75rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: #3498db;
+  color: #fff;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+button:nth-child(2) {
+  background: #636e72; /* رنگ دارک‌تر برای دکمه دوم */
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+/* طراحی جدید برای result */
+.result {
+  margin-top: 1.25rem;
+  padding: 0.9375rem; /* 15px = 0.9375rem */
+  background: #2c2c2c; /* پس‌زمینه دارک */
+  border-radius: 0.75rem;
+  box-shadow: 0 0.125rem 0.625rem rgba(0, 0, 0, 0.2);
+  font-size: 1rem; /* 16px = 1rem */
+  color: #e0e0e0;
+  line-height: 1.8;
+}
+
+.result br {
+  display: block;
+  margin: 0.5rem 0; /* 8px = 0.5rem */
+}
+
+.result::before {
+  content: "📋 اطلاعات تولیدشده:";
+  display: block;
+  font-weight: bold;
+  color: #3498db;
+  margin-bottom: 0.625rem;
+}
+
+/* استایل برای ایموجی‌ها و متن */
+.result span {
+  color: #b0b0b0; /* رنگ خاکستری روشن برای متن کنار ایموجی */
+}
+
+/* ریسپانسیو */
+@media (max-width: 30rem) { /* 480px = 30rem */
+  .container {
+    padding: 0.9375rem;
+  }
+  .buttons {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
