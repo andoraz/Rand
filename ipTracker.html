@@ -103,13 +103,16 @@
         document.getElementById('warning').textContent = 'Duplicate IP address!';
       } else {
         document.getElementById('warning').textContent = '';
-        const geoData = await fetch(`https://ipapi.co/${currentIP}/json/`).then(res => res.json());
+
+        const geoRes = await fetch(`https://api.db-ip.com/v2/free/${currentIP}`);
+        const geoData = await geoRes.json();
+
         ipList.push({
           address: currentIP,
           note: document.getElementById('note').value,
           date: new Date().toISOString(),
-          location: geoData.city + ', ' + geoData.country_name,
-          isp: geoData.org || '',
+          location: geoData.city + ', ' + geoData.countryName,
+          isp: geoData.organization || '',
         });
         localStorage.setItem('ipList', JSON.stringify(ipList));
         renderList();
@@ -137,6 +140,11 @@
 
       const container = document.getElementById('ip-list');
       container.innerHTML = '';
+      if (filtered.length === 0) {
+        container.innerHTML = '<div style="opacity: 0.6; text-align: center;">No IPs found.</div>';
+        return;
+      }
+
       filtered.forEach(ip => {
         const div = document.createElement('div');
         div.className = 'ip-entry';
