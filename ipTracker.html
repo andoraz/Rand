@@ -4,166 +4,121 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>IP Tracker Tool</title>
-  <style>
-    :root {
-      --bg: #343541;
-      --card-bg: #444654;
-      --text: #ececf1;
-      --accent: #10a37f;
-      --border: #565869;
-    }
-
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: var(--bg);
-      color: var(--text);
-      margin: 0;
-      padding: 2rem;
-    }
-
-    h1 {
-      font-size: 2rem;
-      margin-bottom: 1rem;
-    }
-
-    button, input, select {
-      padding: 0.6rem 1rem;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background-color: var(--card-bg);
-      color: var(--text);
-      font-size: 1rem;
-      margin-right: 0.5rem;
-      margin-bottom: 0.5rem;
-    }
-
-    input[type="text"] {
-      width: 200px;
-    }
-
-    button:hover, select:hover {
-      background-color: var(--accent);
-      color: white;
-    }
-
-    .warning {
-      color: #f87171;
-      margin-top: 0.5rem;
-    }
-
-    .ip-list {
-      margin-top: 2rem;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 1rem;
-    }
-
-    .ip-entry {
-      background-color: var(--card-bg);
-      padding: 1rem;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    }
-
-    .ip-entry strong {
-      font-size: 1.1rem;
-      color: var(--accent);
-    }
-  </style>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
-<body>
-  <h1>IP Tracker Tool</h1>
-  <button id="fetch-ip">Fetch IP</button>
-  <div id="current-ip"></div>
-  <input type="text" id="note" placeholder="Add a note/tag">
-  <button id="remove-ip">Remove Current IP</button>
-  <div class="warning" id="warning"></div>
-  <br>
-  <input type="text" id="search" placeholder="Search IPs">
-  <select id="sort">
-    <option value="date">Sort by Date</option>
-    <option value="alpha">Sort Alphabetically</option>
-    <option value="duplicates">Duplicates First</option>
-  </select>
-  <div class="ip-list" id="ip-list"></div>
+<body class="bg-gray-900 text-gray-100 p-8 font-sans">
+  <h1 class="text-3xl font-bold mb-4">IP Tracker Tool</h1>
+  <div class="flex flex-wrap gap-2 mb-4">
+    <button id="fetch-ip" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded">Fetch IP</button>
+  </div>
+  <div id="warning" class="text-red-400 text-sm mb-4"></div>
+
+  <div class="flex flex-wrap gap-2 mb-4">
+    <input type="text" id="search" placeholder="Search IPs" class="bg-gray-800 border border-gray-600 rounded px-4 py-2 text-sm w-52">
+    <select id="sort" class="bg-gray-800 border border-gray-600 rounded px-4 py-2 text-sm">
+      <option value="date">Sort by Date</option>
+      <option value="alpha">Sort Alphabetically</option>
+      <option value="duplicates">Duplicates First</option>
+    </select>
+  </div>
+
+  <div id="ip-list" class="space-y-4 max-h-[70vh] overflow-y-auto"></div>
 
   <script>
-    const ipList = JSON.parse(localStorage.getItem('ipList')) || [];
+    let ipList = JSON.parse(localStorage.getItem('ipList')) || [];
     let currentIP = null;
 
     async function fetchIP() {
-      const res = await fetch('https://api.ipify.org?format=json');
-      const data = await res.json();
-      currentIP = data.ip;
-      document.getElementById('current-ip').textContent = `Current IP: ${currentIP}`;
+      try {
+        const res = await fetch('https://api.ipify.org?format=json');
+        const data = await res.json();
+        currentIP = data.ip;
 
-      const exists = ipList.find(ip => ip.address === currentIP);
-      if (exists) {
-        document.getElementById('warning').textContent = 'Duplicate IP address!';
-      } else {
-        document.getElementById('warning').textContent = '';
-        const geoData = await fetch(`https://ipapi.co/${currentIP}/json/`).then(res => res.json());
-        ipList.push({
-          address: currentIP,
-          note: document.getElementById('note').value,
-          date: new Date().toISOString(),
-          location: geoData.city + ', ' + geoData.country_name,
-          isp: geoData.org || '',
-        });
+        const existing = ipList.find(ip => ip.address === currentIP);
+        if (existing) {
+          document.getElementById('warning').textContent = 'Duplicate IP address! Timestamp added.';
+          existing.duplicates = existing.duplicates || [];
+          existing.duplicates.push(new Date().toISOString());
+        } else {
+          document.getElementById('warning').textContent = '';
+          const geoData = await fetch(`https://ipapi.co/${currentIP}/json/`).then(res => res.json());
+          ipList.push({
+            address: currentIP,
+            note: '',
+            date: new Date().toISOString(),
+            location: `${geoData.city || 'Unknown'}, ${geoData.country_name || 'Unknown'}`,
+            isp: geoData.org || 'N/A',
+            duplicates: []
+          });
+        }
+
         localStorage.setItem('ipList', JSON.stringify(ipList));
         renderList();
+      } catch (error) {
+        document.getElementById('warning').textContent = 'Failed to fetch IP or location.';
       }
     }
 
     function renderList() {
       const search = document.getElementById('search').value.toLowerCase();
       const sort = document.getElementById('sort').value;
-      let list = [...ipList];
-
-      if (sort === 'alpha') {
-        list.sort((a, b) => a.address.localeCompare(b.address));
-      } else if (sort === 'duplicates') {
-        const counts = list.reduce((acc, ip) => {
-          acc[ip.address] = (acc[ip.address] || 0) + 1;
-          return acc;
-        }, {});
-        list.sort((a, b) => (counts[b.address] - counts[a.address]));
-      } else {
-        list.sort((a, b) => new Date(b.date) - new Date(a.date));
-      }
-
-      const filtered = list.filter(ip => ip.address.includes(search) || (ip.note && ip.note.toLowerCase().includes(search)));
-
       const container = document.getElementById('ip-list');
       container.innerHTML = '';
-      filtered.forEach(ip => {
-        const div = document.createElement('div');
-        div.className = 'ip-entry';
-        div.innerHTML = `
-          <strong>${ip.address}</strong><br>
-          Note: ${ip.note || 'None'}<br>
-          Location: ${ip.location}<br>
-          ISP: ${ip.isp}<br>
-          Added on: ${new Date(ip.date).toLocaleString()}
-        `;
-        container.appendChild(div);
-      });
-    }
 
-    function removeCurrentIP() {
-      if (!currentIP) return;
-      const index = ipList.findIndex(ip => ip.address === currentIP);
-      if (index !== -1) {
-        ipList.splice(index, 1);
-        localStorage.setItem('ipList', JSON.stringify(ipList));
-        renderList();
-        document.getElementById('warning').textContent = '';
-      }
+      let list = ipList
+        .filter(ip => ip.address.includes(search) || ip.note.toLowerCase().includes(search))
+        .sort((a, b) => {
+          if (sort === 'alpha') return a.address.localeCompare(b.address);
+          if (sort === 'duplicates') return (b.duplicates?.length || 0) - (a.duplicates?.length || 0);
+          return new Date(b.date) - new Date(a.date);
+        });
+
+      const fragment = document.createDocumentFragment();
+
+      list.forEach((ip, index) => {
+        const div = document.createElement('div');
+        div.className = 'bg-gray-800 border border-gray-700 rounded p-4 shadow-sm';
+
+        const duplicatesHTML = ip.duplicates.length
+          ? `<div class="text-xs text-gray-400 mt-2">Duplicates:<ul class="list-disc ml-5">${ip.duplicates.map(d => `<li>${new Date(d).toLocaleString()}</li>`).join('')}</ul></div>`
+          : '';
+        const isCurrent = currentIP === ip.address ? `<div class="text-sm text-blue-400 mt-2">Current IP: ${currentIP}</div>` : '';
+
+        div.innerHTML = `
+          <div class="font-semibold text-green-400">${ip.address}</div>
+          <div class="text-sm">Location: ${ip.location}</div>
+          <div class="text-sm">ISP: ${ip.isp}</div>
+          <div class="text-sm">Added on: ${new Date(ip.date).toLocaleString()}</div>
+          ${duplicatesHTML}
+          <input type="text" class="note-edit mt-2 bg-gray-700 border border-gray-600 rounded px-2 py-1 text-sm w-full" value="${ip.note}" placeholder="Edit note">
+          ${isCurrent}
+          <button class="remove-btn mt-2 bg-red-500 hover:bg-red-600 text-white text-sm px-3 py-1 rounded">Remove</button>
+        `;
+
+        const noteInput = div.querySelector('.note-edit');
+        const removeBtn = div.querySelector('.remove-btn');
+
+        noteInput.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter') {
+            ip.note = this.value;
+            localStorage.setItem('ipList', JSON.stringify(ipList));
+            this.blur();
+          }
+        });
+
+        removeBtn.addEventListener('click', function () {
+          ipList.splice(index, 1);
+          localStorage.setItem('ipList', JSON.stringify(ipList));
+          renderList();
+        });
+
+        fragment.appendChild(div);
+      });
+
+      container.appendChild(fragment);
     }
 
     document.getElementById('fetch-ip').addEventListener('click', fetchIP);
-    document.getElementById('remove-ip').addEventListener('click', removeCurrentIP);
     document.getElementById('search').addEventListener('input', renderList);
     document.getElementById('sort').addEventListener('change', renderList);
 
