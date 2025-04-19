@@ -91,13 +91,12 @@
   <script>
     let ipList = JSON.parse(localStorage.getItem('ipList')) || [];
     ipList = ipList.map(ip => ({ ...ip, tags: ip.tags || [], duplicates: ip.duplicates || [] }));
-    let currentIP = null;
 
     async function fetchIP() {
       try {
         const res = await fetch('https://api.ipify.org?format=json');
         const data = await res.json();
-        currentIP = data.ip;
+        const currentIP = data.ip;
 
         const existing = ipList.find(ip => ip.address === currentIP);
         if (existing) {
@@ -140,7 +139,7 @@
         return new Date(b.date) - new Date(a.date);
       });
 
-      for (let [index, ip] of sorted.entries()) {
+      for (let ip of sorted) {
         const div = document.createElement('div');
         div.className = 'ip-card';
 
@@ -148,7 +147,6 @@
         const duplicateHTML = ip.duplicates.length
           ? `<div style="font-size: 0.75rem; color: #a0aec0; margin-top: 0.5rem;">Duplicates:<ul style="margin-left: 1rem;">${ip.duplicates.map(d => `<li>${new Date(d).toLocaleString()}</li>`).join('')}</ul></div>`
           : '';
-        const isCurrent = currentIP === ip.address ? `<div style="font-size: 0.875rem; color: #63b3ed; margin-top: 0.5rem;">Current IP: ${currentIP}</div>` : '';
 
         div.innerHTML = `
           <div class="flex-between">
@@ -164,7 +162,6 @@
           ${duplicateHTML}
           <div style="margin-top: 0.5rem;">Tags: ${tagHTML}</div>
           <input type="text" class="tag-input input" placeholder="Add tag and press Enter" style="margin-top: 0.5rem; width: 100%;">
-          ${isCurrent}
         `;
 
         div.querySelector('.tag-input').addEventListener('keydown', function (e) {
